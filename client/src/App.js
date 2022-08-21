@@ -4,8 +4,8 @@ import Login from './features/auth/Login';
 import Public from './components/Public';
 import DashLayout from './components/DashLayout';
 import Welcome from './features/auth/Welcome';
-import NotesList from './features/users/NotesList';
-import UsersList from './features/notes/UsersList';
+import NotesList from './features/notes/NotesList';
+import UsersList from './features/users/UsersList';
 
 function App() {
   return (
