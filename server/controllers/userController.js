@@ -1,13 +1,11 @@
 const User = require('../models/User')
 const Note = require('../models/Note')
-const asyncHandler = require('express-async-handler')
 const bcrypt = require('bcrypt')
 
-// @desc Get All Users
+// @desc Get all users
 // @route GET /users
-// @access Prvate
-
-const getAllUsers = asyncHandler(async (req, res) => {
+// @access Private
+const getAllUsers = async (req, res) => {
     // Get all users from MongoDB
     const users = await User.find().select('-password').lean()
 
@@ -17,49 +15,47 @@ const getAllUsers = asyncHandler(async (req, res) => {
     }
 
     res.json(users)
-})
+}
 
-// @desc Create User
+// @desc Create new user
 // @route POST /users
-// @access Prvate
-
-const createNewUser = asyncHandler(async (req, res) => {
-
+// @access Private
+const createNewUser = async (req, res) => {
     const { username, password, roles } = req.body
 
-    // confirm data
-    if (!username || !password || !Array.isArray(roles) || !roles.length) {
-        return res.status(400).json({ message: 'All Fields are required' })
+    // Confirm data
+    if (!username || !password) {
+        return res.status(400).json({ message: 'All fields are required' })
     }
 
-    // check for duplicate
-    const duplicate = await User.findOne({ username }).lean().exec()
+    // Check for duplicate username
+    const duplicate = await User.findOne({ username }).collation({ locale: 'en', strength: 2 }).lean().exec()
 
     if (duplicate) {
         return res.status(409).json({ message: 'Duplicate username' })
     }
 
-    // Hash password
-    const hashedPwd = await bcrypt.hash(password, 10) //salt rounds
+    // Hash password 
+    const hashedPwd = await bcrypt.hash(password, 10) // salt rounds
 
-    const userObject = { username, "password": hashedPwd, roles }
+    const userObject = (!Array.isArray(roles) || !roles.length)
+        ? { username, "password": hashedPwd }
+        : { username, "password": hashedPwd, roles }
 
-    // create and store new user
+    // Create and store new user 
     const user = await User.create(userObject)
 
-    if (user) {
+    if (user) { //created 
         res.status(201).json({ message: `New user ${username} created` })
     } else {
-        res.status(400).json({ message: `Invalid user data received` })
+        res.status(400).json({ message: 'Invalid user data received' })
     }
+}
 
-})
-
-// @desc Upate User
+// @desc Update a user
 // @route PATCH /users
-// @access Prvate
-
-const updateUser = asyncHandler(async (req, res) => {
+// @access Private
+const updateUser = async (req, res) => {
     const { id, username, roles, active, password } = req.body
 
     // Confirm data 
@@ -75,7 +71,7 @@ const updateUser = asyncHandler(async (req, res) => {
     }
 
     // Check for duplicate 
-    const duplicate = await User.findOne({ username }).lean().exec()
+    const duplicate = await User.findOne({ username }).collation({ locale: 'en', strength: 2 }).lean().exec()
 
     // Allow updates to the original user 
     if (duplicate && duplicate?._id.toString() !== id) {
@@ -94,13 +90,12 @@ const updateUser = asyncHandler(async (req, res) => {
     const updatedUser = await user.save()
 
     res.json({ message: `${updatedUser.username} updated` })
-})
+}
 
-// @desc Delete User
+// @desc Delete a user
 // @route DELETE /users
-// @access Prvate
-
-const deleteUser = asyncHandler(async (req, res) => {
+// @access Private
+const deleteUser = async (req, res) => {
     const { id } = req.body
 
     // Confirm data
@@ -126,8 +121,7 @@ const deleteUser = asyncHandler(async (req, res) => {
     const reply = `Username ${result.username} with ID ${result._id} deleted`
 
     res.json(reply)
-})
-
+}
 
 module.exports = {
     getAllUsers,
@@ -135,4 +129,3 @@ module.exports = {
     updateUser,
     deleteUser
 }
-
